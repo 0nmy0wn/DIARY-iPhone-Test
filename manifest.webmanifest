@@ -1,0 +1,1 @@
+{"name":"DIARY - わたしの日記","short_name":"DIARY","description":"iPhone内に保存するシンプルな日記","start_url":"./","scope":"./","display":"standalone","background_color":"#faf8f5","theme_color":"#faf8f5","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
