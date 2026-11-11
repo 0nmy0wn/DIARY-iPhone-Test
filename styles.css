@@ -10,3 +10,13 @@
 
 /* v0.3.0 Windows prototype */
 .brandline{display:flex;align-items:baseline;gap:9px}.brandline small{font-size:11px;color:#777;font-weight:500}.entry-list{display:flex;flex-direction:column;gap:14px}.entry{border:1px solid #e3ded8!important;border-radius:16px!important;background:#fff!important;padding:17px!important;box-shadow:0 2px 8px rgba(30,20,10,.035)}.ai-generate{font:inherit;font-size:13px;border:1px solid #d4c8ba;border-radius:10px;background:#f8f4ef;padding:9px 12px;cursor:pointer}.ai-comment{margin-top:12px;padding:11px 13px;border-radius:10px;background:#f7f5f2;font-size:14px;white-space:pre-wrap}.ai-status{font-size:12px;color:#777;margin-top:8px}.ai-generate:disabled{opacity:.55}
+
+/* v0.3.1 */
+.auto-toggle{display:flex;gap:12px;align-items:flex-start;padding:14px 12px;border:1px solid #d4c8ba;border-radius:10px;background:#fff;line-height:1.6;font-size:14px}.auto-toggle input{width:22px;height:22px;flex-shrink:0;accent-color:#574a40}.ai-pending{margin-top:12px;font-size:12px;color:#82786e}
+
+/* v0.3.1 final refinements */
+.top{height:96px;padding-top:12px;padding-bottom:10px}.shell{padding-top:96px}.view{min-height:calc(100dvh - 96px)}
+.brandline h1{margin:1px 0}.header-tagline{display:block;font-size:11px;color:#85796e;line-height:1.25;margin-top:1px;letter-spacing:.01em}
+.entry-body{line-height:1.69}.day-divider{font-size:12px;color:#8b8075;font-weight:500;text-align:center;letter-spacing:.03em;margin:10px 0 0;display:flex;align-items:center;gap:12px}.day-divider:before,.day-divider:after{content:'';height:1px;background:#e3ded8;flex:1}
+.ai-comment{display:flex;align-items:flex-start;gap:10px;line-height:1.6}.ai-emoji{font-size:25px;line-height:1.2;flex-shrink:0}.ai-pending{display:flex;align-items:center;gap:8px}.ai-pending:before{content:' ';width:11px;height:11px;border:2px solid #d8d0c7;border-top-color:#8e7c6c;border-radius:50%;animation:ai-spin 1.2s linear infinite}@keyframes ai-spin{to{transform:rotate(360deg)}}
+.ai-comment{animation:ai-fade .4s ease-out}@keyframes ai-fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.ai-comment,.ai-pending:before{animation:none}}
