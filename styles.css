@@ -20,3 +20,10 @@
 .entry-body{line-height:1.69}.day-divider{font-size:12px;color:#8b8075;font-weight:500;text-align:center;letter-spacing:.03em;margin:10px 0 0;display:flex;align-items:center;gap:12px}.day-divider:before,.day-divider:after{content:'';height:1px;background:#e3ded8;flex:1}
 .ai-comment{display:flex;align-items:flex-start;gap:10px;line-height:1.6}.ai-emoji{font-size:25px;line-height:1.2;flex-shrink:0}.ai-pending{display:flex;align-items:center;gap:8px}.ai-pending:before{content:' ';width:11px;height:11px;border:2px solid #d8d0c7;border-top-color:#8e7c6c;border-radius:50%;animation:ai-spin 1.2s linear infinite}@keyframes ai-spin{to{transform:rotate(360deg)}}
 .ai-comment{animation:ai-fade .4s ease-out}@keyframes ai-fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.ai-comment,.ai-pending:before{animation:none}}
+
+/* v0.3.2: two distinct reactions, gentle arrival, reduced motion support */
+.ai-comment-group{margin-top:12px;border-radius:10px;background:#f7f5f2;padding:4px 13px;animation:diary-reveal .45s ease-out both}
+.ai-comment-group .ai-comment{margin:0;padding:11px 0;background:transparent;border-radius:0;animation:none}
+.ai-comment-group .ai-comment+.ai-comment{border-top:1px solid #e6e0d8}
+@keyframes diary-reveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.ai-comment-group{animation:none}}
