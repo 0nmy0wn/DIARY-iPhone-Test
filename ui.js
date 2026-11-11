@@ -28,9 +28,21 @@ function dayKey(iso){const d=new Date(iso);return `${d.getFullYear()}-${d.getMon
 function dayLabel(iso){return new Intl.DateTimeFormat('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(new Date(iso))}
 function timeLabel(iso){return new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(iso))}
 function dateLabel(iso){return new Intl.DateTimeFormat('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(iso))}
+// Display-only fallback for legacy comments without a stored emoji.
+// Never modify the saved comment or pretend to recover a lost original emoji.
+function legacyCommentEmoji(text){
+ const value=typeof text==='string'?text:'';
+ if(/笑|www|ウケ|面白|楽しい|最高|爆笑/.test(value))return '😆';
+ if(/おめでと|すごい|やった|よかった|素敵|嬉し/.test(value))return '✨';
+ if(/疲れ|休ん|無理せず|大丈夫|ゆっくり/.test(value))return '🍵';
+ if(/食べ|ご飯|お腹|おいし/.test(value))return '🍙';
+ if(/寒い|暖か|天気|晴れ/.test(value))return '☀️';
+ if(/頑張|応援|進もう/.test(value))return '🔥';
+ return '😊';
+}
 async function render(){const entries=(await readAll()).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id));const list=el('entryList');const comments=new Map((await readComments()).map(c=>[c.entryId,c]));list.replaceChildren();if(!entries.length){const section=document.createElement('section');section.className='empty';const p=document.createElement('p');p.textContent='まだ日記はありません。';section.append(p);list.append(section);return}list.className='entry-list';let lastDay='';for(const entry of entries){const day=dayKey(entry.createdAt);if(day!==lastDay){const heading=document.createElement('h2');heading.className='day-divider';heading.textContent=dayLabel(entry.createdAt);list.append(heading);lastDay=day;}const article=document.createElement('article');article.className='entry';const date=document.createElement('p');date.className='entry-date';date.textContent=dateLabel(entry.createdAt);const p=document.createElement('p');p.className='entry-body';p.textContent=entry.body;const actions=document.createElement('div');actions.className='entry-actions';const del=document.createElement('button');del.className='entry-delete';del.textContent='削除';del.setAttribute('aria-label',`${dateLabel(entry.createdAt)}の日記を削除`);del.addEventListener('click',()=>{pendingDelete=entry.id;el('deleteConfirm').classList.remove('hidden')});actions.append(del);article.append(date,p);
  const comment=comments.get(entry.id);
- if(comment){const note=document.createElement('div');note.className='ai-comment-group';const replies=Array.isArray(comment.replies)&&comment.replies.length?comment.replies:[{emoji:comment.emoji||'💬',text:comment.text}];for(const reply of replies){const line=document.createElement('div');line.className='ai-comment';const emoji=document.createElement('span');emoji.className='ai-emoji';emoji.textContent=reply.emoji||'😊';emoji.setAttribute('aria-hidden','true');const words=document.createElement('span');words.textContent=reply.text;line.append(emoji,words);note.append(line)}article.append(note)}
+ if(comment){const note=document.createElement('div');note.className='ai-comment-group';const replies=Array.isArray(comment.replies)&&comment.replies.length?comment.replies:[{emoji:(typeof comment.emoji==='string'&&comment.emoji.trim()&&comment.emoji.trim()!=='💬')?comment.emoji:legacyCommentEmoji(comment.text),text:comment.text}];for(const reply of replies){const line=document.createElement('div');line.className='ai-comment';const emoji=document.createElement('span');emoji.className='ai-emoji';emoji.textContent=reply.emoji||'😊';emoji.setAttribute('aria-hidden','true');const words=document.createElement('span');words.textContent=reply.text;line.append(emoji,words);note.append(line)}article.append(note)}
  else if(entry.aiEligible===true&&!autoEnabled){const aiButton=document.createElement('button');aiButton.className='ai-generate';aiButton.textContent='✦ ひとことコメントを生成';aiButton.disabled=aiWorking;aiButton.addEventListener('click',()=>{pendingAI=entry;el('aiConfirm').classList.remove('hidden')});article.append(aiButton)}
   else if(entry.aiEligible===true&&autoEnabled){const status=document.createElement('p');status.className='ai-pending';status.textContent=authToken?'コメントを考えています…':'AIコメントはログイン後に自動生成されます';article.append(status)}
  article.append(actions);list.append(article)}}
