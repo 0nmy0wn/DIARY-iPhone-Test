@@ -27,3 +27,26 @@
 .ai-comment-group .ai-comment+.ai-comment{border-top:1px solid #e6e0d8}
 @keyframes diary-reveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.ai-comment-group{animation:none}}
+
+.summary-card{padding:16px;border-radius:16px;background:#f1ede8;margin:0 0 12px}.summary-card h3{font-size:14px;margin:0 0 10px}.summary-card p{white-space:pre-wrap;line-height:1.85;margin:0;font-size:14px}
+
+/* v0.4.0 test: compact single-level menu, expandable explanations */
+.summary-card h3{font-size:13px;font-weight:400;color:#82786e;margin-bottom:8px}
+.settingsbody{padding-top:14px;padding-bottom:36px;line-height:1.65}.settingsbody h2.menu-title{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px;margin:18px 0 9px;padding-top:14px;border-top:1px solid #e8e3dc}.settingsbody h2.menu-title:first-child{border-top:0;margin-top:0}.help-toggle{font-size:12px;font-weight:400;color:#756758;background:transparent;border:1px solid #d8cec3;border-radius:16px;padding:5px 9px;white-space:nowrap;flex-shrink:0}.menu-help{background:#f1ede8;padding:11px 13px;border-radius:10px;line-height:1.7;margin:6px 0 12px!important}.settingsbody .wide{padding:11px 12px;margin:9px 0 13px;font-size:14px}.settingsbody .auto-toggle{padding:10px 12px}.settingsbody .notice{margin:7px 0}.settingsbody input#aiPassword{padding:10px!important}
+
+/* v0.4.1.1: approved layout refinements */
+.auth-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:9px 0 13px}
+.settingsbody .auth-actions .wide{margin:0;min-width:0;padding:11px 5px;font-size:13px}
+.storage-section-heading{margin:27px 0 4px;padding:16px 0 2px;border-top:2px solid #cbbdb0;color:#756758;font-size:13px;font-weight:700;letter-spacing:.04em}
+.settingsbody .storage-section-heading+h2.menu-title{border-top:0;margin-top:3px;padding-top:8px}
+@media(max-width:350px){.settingsbody .auth-actions .wide{font-size:12px}}
+
+/* v0.4.1.2: summary label and independently expandable storage cards */
+.summary-card h3{font-size:14px;font-weight:700;color:#55483f;margin-bottom:9px}
+.storage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch;margin-top:12px}
+.storage-card{min-width:0;display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid #d8cec3;border-radius:12px;background:#fff}
+.storage-card-title{display:flex;align-items:center;justify-content:space-between;gap:5px;flex-wrap:wrap;font-size:14px;line-height:1.5;margin:0}
+.storage-card .menu-help{background:#f1ede8;border-radius:9px;padding:10px;font-size:12px;line-height:1.7;margin:0!important;overflow-wrap:anywhere}
+.settingsbody .storage-card .wide{margin:auto 0 0;min-width:0;padding:10px 5px;font-size:12px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+.storage-card .help-toggle{font-size:11px;padding:4px 7px}
+@media(max-width:370px){.storage-grid{gap:7px}.storage-card{padding:9px}.storage-card-title{font-size:13px}}

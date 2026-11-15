@@ -1,7 +1,7 @@
 'use strict';
 const el=id=>document.getElementById(id);
 const home=el('home'),editor=el('editor'),menu=el('menu'),confirm=el('confirm'),body=el('body');
-const DB_NAME='diary-local-v1', STORE='entries', AI_STORE='aiComments';
+const DB_NAME='diary-local-v1', STORE='entries', AI_STORE='aiComments', SUMMARY_STORE='dailySummaries';
 const API_BASE='https://diary-ai-api.jyono26.workers.dev';
 const TOKEN_KEY='diary-ai-token';
 let authToken=localStorage.getItem(TOKEN_KEY)||sessionStorage.getItem(TOKEN_KEY)||'';
@@ -16,7 +16,7 @@ const autoTried=new Set();
 let db, toastTimer, pendingDelete=null, pendingRestore=null, busy=false;
 function uid(){if(globalThis.crypto?.randomUUID)return crypto.randomUUID();const a=new Uint8Array(16);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function showToast(message){const t=el('toast');t.textContent=message;t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),4000)}
-function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,2);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'id'});if(!d.objectStoreNames.contains(AI_STORE))d.createObjectStore(AI_STORE,{keyPath:'entryId'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);req.onblocked=()=>reject(Error('別のタブがデータベースを使用中です。'))})}
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,3);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'id'});if(!d.objectStoreNames.contains(AI_STORE))d.createObjectStore(AI_STORE,{keyPath:'entryId'});if(!d.objectStoreNames.contains(SUMMARY_STORE))d.createObjectStore(SUMMARY_STORE,{keyPath:'day'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);req.onblocked=()=>reject(Error('別のタブがデータベースを使用中です。'))})}
 function readAll(){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly');const req=tx.objectStore(STORE).getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 function putOne(entry){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).add(entry);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}
 function deleteOne(id){return new Promise((resolve,reject)=>{const tx=db.transaction([STORE,AI_STORE],'readwrite');tx.objectStore(STORE).delete(id);tx.objectStore(AI_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}
@@ -40,7 +40,7 @@ function legacyCommentEmoji(text){
  if(/頑張|応援|進もう/.test(value))return '🔥';
  return '😊';
 }
-async function render(){const entries=(await readAll()).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id));const list=el('entryList');const comments=new Map((await readComments()).map(c=>[c.entryId,c]));list.replaceChildren();if(!entries.length){const section=document.createElement('section');section.className='empty';const p=document.createElement('p');p.textContent='まだ日記はありません。';section.append(p);list.append(section);return}list.className='entry-list';let lastDay='';for(const entry of entries){const day=dayKey(entry.createdAt);if(day!==lastDay){const heading=document.createElement('h2');heading.className='day-divider';heading.textContent=dayLabel(entry.createdAt);list.append(heading);lastDay=day;}const article=document.createElement('article');article.className='entry';const date=document.createElement('p');date.className='entry-date';date.textContent=dateLabel(entry.createdAt);const p=document.createElement('p');p.className='entry-body';p.textContent=entry.body;const actions=document.createElement('div');actions.className='entry-actions';const del=document.createElement('button');del.className='entry-delete';del.textContent='削除';del.setAttribute('aria-label',`${dateLabel(entry.createdAt)}の日記を削除`);del.addEventListener('click',()=>{pendingDelete=entry.id;el('deleteConfirm').classList.remove('hidden')});actions.append(del);article.append(date,p);
+async function render(){const entries=(await readAll()).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id));const list=el('entryList');const comments=new Map((await readComments()).map(c=>[c.entryId,c]));const summaries=new Map((await DiarySummary.allSummaries()).map(s=>[s.day,s]));list.replaceChildren();if(!entries.length){const section=document.createElement('section');section.className='empty';const p=document.createElement('p');p.textContent='まだ日記はありません。';section.append(p);list.append(section);return}list.className='entry-list';let lastDay='';for(const entry of entries){const day=DiarySummary.dayForEntry(entry.createdAt);if(day!==lastDay){const heading=document.createElement('h2');heading.className='day-divider';const summaryDayLabel=dayLabel(day+'T12:00:00+09:00');heading.textContent=summaryDayLabel;list.append(heading);const summary=summaries.get(day);if(summary)list.append(DiarySummary.makeCard(summary,summaryDayLabel));lastDay=day;}const article=document.createElement('article');article.className='entry';const date=document.createElement('p');date.className='entry-date';date.textContent=dateLabel(entry.createdAt);const p=document.createElement('p');p.className='entry-body';p.textContent=entry.body;const actions=document.createElement('div');actions.className='entry-actions';const del=document.createElement('button');del.className='entry-delete';del.textContent='削除';del.setAttribute('aria-label',`${dateLabel(entry.createdAt)}の日記を削除`);del.addEventListener('click',()=>{pendingDelete=entry.id;el('deleteConfirm').classList.remove('hidden')});actions.append(del);article.append(date,p);
  const comment=comments.get(entry.id);
  if(comment){const note=document.createElement('div');note.className='ai-comment-group';const replies=Array.isArray(comment.replies)&&comment.replies.length?comment.replies:[{emoji:(typeof comment.emoji==='string'&&comment.emoji.trim()&&comment.emoji.trim()!=='💬')?comment.emoji:legacyCommentEmoji(comment.text),text:comment.text}];for(const reply of replies){const line=document.createElement('div');line.className='ai-comment';const emoji=document.createElement('span');emoji.className='ai-emoji';emoji.textContent=reply.emoji||'😊';emoji.setAttribute('aria-hidden','true');const words=document.createElement('span');words.textContent=reply.text;line.append(emoji,words);note.append(line)}article.append(note)}
  else if(entry.aiEligible===true&&!autoEnabled){const aiButton=document.createElement('button');aiButton.className='ai-generate';aiButton.textContent='✦ ひとことコメントを生成';aiButton.disabled=aiWorking;aiButton.addEventListener('click',()=>{pendingAI=entry;el('aiConfirm').classList.remove('hidden')});article.append(aiButton)}
@@ -55,11 +55,52 @@ function setBusy(flag){busy=flag;el('submitEntry').disabled=flag||!body.value.tr
 async function submit(){if(busy||!body.value.trim())return;setBusy(true);el('editorStatus').textContent='保存しています…';try{await putOne({id:uid(),originId:null,createdAt:new Date().toISOString(),body:body.value,schemaVersion:2,aiEligible:true});await render();leaveEditor();showToast('日記を保存しました。');queueAutoComments()}catch(e){el('editorStatus').textContent='保存できませんでした。文章は残っています。もう一度「投稿する」を押してください。';showToast('保存に失敗しました。')}finally{setBusy(false)}}
 async function removeEntry(){if(!pendingDelete||busy)return;const id=pendingDelete;setBusy(true);try{await deleteOne(id);pendingDelete=null;el('deleteConfirm').classList.add('hidden');await render();showToast('日記を削除しました。')}catch(e){showToast('削除できませんでした。')}finally{setBusy(false)}}
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
-async function backup(){if(busy)return;setBusy(true);try{const entries=await readAll();const comments=await readComments();const payload={format:'DIARY_BACKUP',version:2,exportedAt:new Date().toISOString(),entries,aiComments:comments};const text=JSON.stringify(payload,null,2);downloadBlob(new Blob([text],{type:'application/json;charset=utf-8'}),`DIARY_backup_${new Date().toLocaleDateString('sv-SE')}.json`);el('storageStatus').textContent=`${entries.length}件のバックアップを作成しました。ダウンロード先をご確認ください。`;}catch(e){el('storageStatus').textContent='バックアップ作成に失敗しました。';showToast('バックアップ作成に失敗しました。')}finally{setBusy(false)}}
-async function chooseRestore(file){if(!file)return;pendingRestore=null;try{if(file.size>20*1024*1024)throw Error('ファイルが大きすぎます（上限20MB）。');const data=JSON.parse(await file.text());const entries=DiaryMerge.validateBackup(data);pendingRestore={entries,comments:DiaryMerge.validateComments(data)};el('restoreSummary').textContent=`バックアップの日記 ${entries.length}件を確認しました。現在の日記を残したまま統合します。よろしいですか？`;el('restoreConfirm').classList.remove('hidden')}catch(e){el('storageStatus').textContent=`復元を開始できません：${e.message}`;showToast('バックアップを読み込めませんでした。')}finally{el('restoreFile').value=''}}
-async function restore(){if(!pendingRestore||busy)return;setBusy(true);try{const current=await readAll();const result=DiaryMerge.mergeEntries(current,pendingRestore.entries,uid);const existingComments=await readComments();const commentSet=new Set(existingComments.map(c=>c.entryId));const idMap=new Map();for(const a of result.additions){const original=pendingRestore.entries.find(e=>e.id===a.id||e.id===a.originId&&e.body===a.body);if(original)idMap.set(original.id,a.id)}
- const newComments=[];for(const c of pendingRestore.comments){const target=idMap.get(c.entryId);if(target&&!commentSet.has(target)){newComments.push({...c,entryId:target});commentSet.add(target)}}
- await addBatchWithComments(result.additions,newComments);pendingRestore=null;el('restoreConfirm').classList.add('hidden');await render();el('storageStatus').textContent=`統合完了：追加${result.additions.length}件、重複スキップ${result.skipped}件、同ID異本文を別IDで保存${result.renamed}件。`;showToast('バックアップを統合しました。')}catch(e){el('storageStatus').textContent='統合できませんでした。現在の日記は削除していません。';showToast('復元に失敗しました。')}finally{setBusy(false)}}
+async function backup(){if(busy)return;setBusy(true);try{const entries=await readAll();const comments=await readComments();const dailySummaries=await DiarySummary.allSummaries();const payload={format:'DIARY_BACKUP',version:3,exportedAt:new Date().toISOString(),entries,aiComments:comments,dailySummaries};const text=JSON.stringify(payload,null,2);downloadBlob(new Blob([text],{type:'application/json;charset=utf-8'}),`DIARY_backup_${new Date().toLocaleDateString('sv-SE')}.json`);el('storageStatus').textContent=`${entries.length}件のバックアップを作成しました。ダウンロード先をご確認ください。`;}catch(e){el('storageStatus').textContent='バックアップ作成に失敗しました。';showToast('バックアップ作成に失敗しました。')}finally{setBusy(false)}}
+async function chooseRestore(file){if(!file)return;pendingRestore=null;try{if(file.size>20*1024*1024)throw Error('ファイルが大きすぎます（上限20MB）。');const data=JSON.parse(await file.text());const entries=DiaryMerge.validateBackup(data);pendingRestore={entries,comments:DiaryMerge.validateComments(data),summaries:Array.isArray(data.dailySummaries)?data.dailySummaries.filter(x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.day)&&typeof x.text==='string'&&x.text.trim().length<=3000):[]};el('restoreSummary').textContent=`バックアップの日記 ${entries.length}件を確認しました。現在の日記を残したまま統合します。よろしいですか？`;el('restoreConfirm').classList.remove('hidden')}catch(e){el('storageStatus').textContent=`復元を開始できません：${e.message}`;showToast('バックアップを読み込めませんでした。')}finally{el('restoreFile').value=''}}
+async function restore(){
+ if(!pendingRestore||busy)return;
+ setBusy(true);
+ try{
+  const current=await readAll();
+  const result=DiaryMerge.mergeEntries(current,pendingRestore.entries,uid);
+  const existingComments=await readComments();
+  const commentSet=new Set(existingComments.map(c=>c.entryId));
+  // Every incoming ID maps to its retained or newly created destination ID.
+  // Match same-ID/same-body first; conflicting IDs use the newly assigned ID.
+  const destination=new Map();
+  const currentById=new Map(current.map(e=>[e.id,e]));
+  for(const e of pendingRestore.entries){
+   const existing=currentById.get(e.id);
+   if(existing&&existing.body===e.body)destination.set(e.id,e.id);
+   else{
+    const added=result.additions.find(a=>a.body===e.body&&(a.id===e.id||a.originId===e.id));
+    if(added)destination.set(e.id,added.id);
+   }
+  }
+  const newComments=[];
+  for(const c of pendingRestore.comments){
+   const target=destination.get(c.entryId);
+   if(target&&!commentSet.has(target)){
+    newComments.push({...c,entryId:target});
+    commentSet.add(target);
+   }
+  }
+  await addBatchWithComments(result.additions,newComments);
+  const oldSummaries=new Set((await DiarySummary.allSummaries()).map(x=>x.day));
+  for(const item of pendingRestore.summaries){
+   if(!oldSummaries.has(item.day)){
+    await DiarySummary.saveSummary(item);oldSummaries.add(item.day);
+   }
+  }
+  await DiarySummary.renderSummaries();
+  pendingRestore=null;el('restoreConfirm').classList.add('hidden');await render();
+  el('storageStatus').textContent=`統合完了：追加${result.additions.length}件、重複スキップ${result.skipped}件、同ID異本文を別IDで保存${result.renamed}件。`;
+  showToast('バックアップを統合しました。');
+ }catch(e){
+  el('storageStatus').textContent='統合できませんでした。現在の日記は削除していません。';
+  showToast('復元に失敗しました。');
+ }finally{setBusy(false)}
+}
 function updateAuthStatus(){const e=el('authStatus');if(e)e.textContent=authToken?'AIログイン済み（AIコメント生成のたびに有効期限を30日延長）':'未ログイン';}
 el('aiLoginButton').addEventListener('click',async()=>{
  const password=el('aiPassword').value;
@@ -129,4 +170,4 @@ el('newButton').addEventListener('click',openEditor);el('closeEditor').addEventL
 el('cancelDelete').addEventListener('click',()=>{pendingDelete=null;el('deleteConfirm').classList.add('hidden')});el('acceptDelete').addEventListener('click',removeEntry);el('backupButton').addEventListener('click',backup);el('restoreButton').addEventListener('click',()=>el('restoreFile').click());el('restoreFile').addEventListener('change',e=>chooseRestore(e.target.files[0]));el('cancelRestore').addEventListener('click',()=>{pendingRestore=null;el('restoreConfirm').classList.add('hidden')});el('acceptRestore').addEventListener('click',restore);
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!el('restoreConfirm').classList.contains('hidden')){pendingRestore=null;el('restoreConfirm').classList.add('hidden')}else if(!el('deleteConfirm').classList.contains('hidden')){pendingDelete=null;el('deleteConfirm').classList.add('hidden')}else if(!confirm.classList.contains('hidden'))return;else if(!menu.classList.contains('hidden'))closeMenu();else if(!editor.classList.contains('hidden'))requestClose()});
 window.addEventListener('beforeunload',e=>{if(!editor.classList.contains('hidden')&&body.value.trim()){e.preventDefault();e.returnValue=''}});
-(async()=>{try{db=await openDB();await render();queueAutoComments();/* PWA service worker registered separately */}catch(e){el('entryList').textContent='日記の保存領域を開けませんでした。ブラウザの設定を確認してください。';el('newButton').disabled=true;showToast('保存領域を利用できません。')}})();
+(async()=>{try{db=await openDB();await render();await DiarySummary.init();queueAutoComments();/* PWA service worker registered separately */}catch(e){el('entryList').textContent='日記の保存領域を開けませんでした。ブラウザの設定を確認してください。';el('newButton').disabled=true;showToast('保存領域を利用できません。')}})();
