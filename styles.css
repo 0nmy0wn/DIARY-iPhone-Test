@@ -58,3 +58,21 @@
 .day-divider{scroll-margin-top:108px}
 .day-empty{text-align:center;color:#978b7e;font-size:14px;padding:12px 0 22px;margin:0}
 @media(max-width:360px){.floating-actions{right:9px;gap:5px}.nav-pill{padding:0 8px;font-size:11px}.floating-actions .fab{width:54px;height:54px}}
+
+/* v0.4.3: future-expandable fixed bottom navigation */
+.bottom-tabs{position:fixed;bottom:0;left:0;right:0;z-index:13;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));height:calc(60px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:#faf8f5;border-top:1px solid #e4dcd3;box-shadow:0 -3px 16px #0000000b}
+.bottom-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:transparent;color:#8a7e73;font:inherit;font-size:12px;cursor:pointer}
+.bottom-tab.active{color:#574a40;font-weight:700}
+.bottom-tab.active:after{content:'';position:absolute;bottom:calc(5px + env(safe-area-inset-bottom));width:32px;height:2px;border-radius:2px;background:#574a40}
+.tab-symbol{font-size:22px;line-height:1.1}
+.floating-actions{bottom:calc(78px + env(safe-area-inset-bottom));z-index:14}
+#home .content,#summaryView .content{padding-bottom:calc(170px + env(safe-area-inset-bottom))}
+.summary-list-title{font-size:18px;color:#574a40;font-weight:600;margin:12px 0 26px}
+#summaryList .summary-card{margin-bottom:12px}
+#summaryList .day-divider{margin-top:14px;margin-bottom:0}
+#summaryView .empty{padding:35px 12px;text-align:center;color:#82786e}
+.bottom-tabs.hidden{display:none}
+
+/* v0.4.3.1: summary-only calendar navigation above the bottom tabs. */
+#summaryView .summary-floating-actions{bottom:calc(78px + env(safe-area-inset-bottom))}
+#summaryList .day-divider{scroll-margin-top:108px}

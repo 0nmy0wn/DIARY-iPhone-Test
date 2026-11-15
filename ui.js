@@ -53,9 +53,74 @@ async function render(){const entries=(await readAll()).sort((a,b)=>b.createdAt.
  if(comment){const note=document.createElement('div');note.className='ai-comment-group';const replies=Array.isArray(comment.replies)&&comment.replies.length?comment.replies:[{emoji:(typeof comment.emoji==='string'&&comment.emoji.trim()&&comment.emoji.trim()!=='💬')?comment.emoji:legacyCommentEmoji(comment.text),text:comment.text}];for(const reply of replies){const line=document.createElement('div');line.className='ai-comment';const emoji=document.createElement('span');emoji.className='ai-emoji';emoji.textContent=reply.emoji||'😊';emoji.setAttribute('aria-hidden','true');const words=document.createElement('span');words.textContent=reply.text;line.append(emoji,words);note.append(line)}article.append(note)}
  else if(entry.aiEligible===true&&!autoEnabled){const aiButton=document.createElement('button');aiButton.className='ai-generate';aiButton.textContent='✦ ひとことコメントを生成';aiButton.disabled=aiWorking;aiButton.addEventListener('click',()=>{pendingAI=entry;el('aiConfirm').classList.remove('hidden')});article.append(aiButton)}
   else if(entry.aiEligible===true&&autoEnabled){const status=document.createElement('p');status.className='ai-pending';status.textContent=authToken?'コメントを考えています…':'AIコメントはログイン後に自動生成されます';article.append(status)}
- article.append(actions);list.append(article)}}}
-function openEditor(){home.classList.add('hidden');editor.classList.remove('hidden');window.scrollTo(0,0);body.focus()}
-function leaveEditor(){editor.classList.add('hidden');home.classList.remove('hidden');body.value='';el('editorStatus').textContent='';el('submitEntry').disabled=true;window.scrollTo(0,0)}
+ article.append(actions);list.append(article)}}if(activeTab==='summaries')await renderSummaryList();}
+// v0.4.3: Read-only summary list. No database schema or AI generation changes.
+let activeTab='home';
+const summaryView=el('summaryView'), bottomTabs=el('bottomTabs');
+// v0.4.3.1: Independent calendar-day navigation for the read-only summary list.
+let summaryNavigationDay=null;
+function summaryVisibleDay(){
+ const headings=[...document.querySelectorAll('#summaryList .day-divider[data-summary-day]')];
+ if(!headings.length)return todayDiaryDay();
+ let chosen=headings[0];
+ for(const h of headings){if(h.getBoundingClientRect().top<=115)chosen=h;else break;}
+ return chosen.dataset.summaryDay;
+}
+async function renderSummaryList(){
+ const target=el('summaryList');
+ const summaries=(await DiarySummary.allSummaries()).sort((a,b)=>b.day.localeCompare(a.day));
+ const byDay=new Map(summaries.map(item=>[item.day,item]));
+ const days=new Set(summaries.map(item=>item.day));
+ if(summaryNavigationDay)days.add(summaryNavigationDay);
+ target.replaceChildren();
+ if(!days.size){
+  const empty=document.createElement('section');empty.className='empty';
+  empty.textContent='まだ「1日の振り返り」はありません。';target.append(empty);return;
+ }
+ for(const day of [...days].sort().reverse()){
+  const label=dayLabel(day+'T12:00:00+09:00');
+  const heading=document.createElement('h2');heading.className='day-divider';
+  heading.dataset.summaryDay=day;heading.textContent=label;target.append(heading);
+  const item=byDay.get(day);
+  if(item)target.append(DiarySummary.makeCard(item,label));
+  else{const empty=document.createElement('p');empty.className='day-empty';empty.textContent='この日の振り返りはありません。';target.append(empty);}
+ }
+}
+async function jumpToSummaryDay(offset){
+ if(!db||activeTab!=='summaries'||!editor.classList.contains('hidden'))return;
+ const current=summaryNavigationDay||summaryVisibleDay();
+ const target=shiftDay(current,offset);
+ if(target>todayDiaryDay()){showToast('これより先の日付には移動できません。');return;}
+ summaryNavigationDay=target;
+ await renderSummaryList();
+ const heading=[...document.querySelectorAll('#summaryList .day-divider[data-summary-day]')].find(h=>h.dataset.summaryDay===target);
+ if(heading){const top=window.scrollY+heading.getBoundingClientRect().top-108;window.scrollTo({top:Math.max(0,top),behavior:'smooth'});}
+}
+el('summaryNavTop').addEventListener('click',async()=>{
+ summaryNavigationDay=null;
+ if(db)await renderSummaryList();
+ window.scrollTo({top:0,behavior:'smooth'});
+});
+el('summaryNavPrev').addEventListener('click',()=>void jumpToSummaryDay(-1));
+el('summaryNavNext').addEventListener('click',()=>void jumpToSummaryDay(1));
+async function switchTab(tab){
+ if(!editor.classList.contains('hidden'))return;
+ activeTab=tab;
+ const isHome=tab==='home';
+ home.classList.toggle('hidden',!isHome);
+ summaryView.classList.toggle('hidden',isHome);
+ el('tabHome').classList.toggle('active',isHome);
+ el('tabSummaries').classList.toggle('active',!isHome);
+ el('tabHome').setAttribute('aria-current',isHome?'page':'false');
+ el('tabSummaries').setAttribute('aria-current',isHome?'false':'page');
+ if(!isHome&&db){try{await renderSummaryList()}catch(e){showToast('振り返り一覧を読み込めませんでした。')}}
+ window.scrollTo(0,0);
+}
+function syncBottomTabs(){bottomTabs.classList.toggle('hidden',!editor.classList.contains('hidden'))}
+el('tabHome').addEventListener('click',()=>void switchTab('home'));
+el('tabSummaries').addEventListener('click',()=>void switchTab('summaries'));
+function openEditor(){home.classList.add('hidden');summaryView.classList.add('hidden');editor.classList.remove('hidden');syncBottomTabs();window.scrollTo(0,0);body.focus()}
+function leaveEditor(){editor.classList.add('hidden');(activeTab==='home'?home:summaryView).classList.remove('hidden');syncBottomTabs();body.value='';el('editorStatus').textContent='';el('submitEntry').disabled=true;window.scrollTo(0,0)}
 function requestClose(){if(busy)return;if(body.value.trim())confirm.classList.remove('hidden');else leaveEditor()}
 function openMenu(){menu.classList.remove('hidden');el('menuButton').setAttribute('aria-expanded','true')}
 function closeMenu(){if(busy)return;menu.classList.add('hidden');el('menuButton').setAttribute('aria-expanded','false')}
