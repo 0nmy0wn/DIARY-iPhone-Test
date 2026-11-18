@@ -18,9 +18,40 @@
  function sourceHash(entries){return entries.map(e=>`${e.id}:${e.createdAt}:${e.body}`).join('\u001f')}
  function makeCard(item, dayLabelText){
    const article=document.createElement('article');article.className='summary-card';
+   const header=document.createElement('div');header.className='summary-card-header';
    const h=document.createElement('h3');h.textContent='この日の振り返り（AI自動生成）';
+   const edit=document.createElement('button');edit.type='button';edit.className='summary-edit-button';edit.textContent='編集';
+   edit.setAttribute('aria-label',`${dayLabelText||item.day}の振り返りを編集`);
+   header.append(h,edit);
    const p=document.createElement('p');p.textContent=item.text;
-   article.append(h,p);return article;
+   article.append(header,p);
+   edit.addEventListener('click',()=>{
+     if(article.querySelector('.summary-edit-area'))return;
+     const textarea=document.createElement('textarea');textarea.className='summary-edit-area';textarea.value=item.text;
+     textarea.maxLength=3000;textarea.setAttribute('aria-label','振り返りの編集内容');
+     const actions=document.createElement('div');actions.className='summary-edit-actions';
+     const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';cancel.className='plain bordered';
+     const save=document.createElement('button');save.type='button';save.textContent='保存する';save.className='submit';
+     const message=document.createElement('span');message.className='notice';message.setAttribute('role','status');
+     actions.append(cancel,save);p.replaceWith(textarea,actions,message);edit.disabled=true;
+     cancel.addEventListener('click',()=>{textarea.replaceWith(p);actions.remove();message.remove();edit.disabled=false});
+     save.addEventListener('click',async()=>{
+       const text=textarea.value.trim();
+       if(!text){message.textContent='文章を入力してください。';return}
+       save.disabled=true;cancel.disabled=true;
+       try{
+         // Fetch the latest value to avoid overwriting other fields or newer edits.
+         const latest=(await allSummaries()).find(s=>s.day===item.day);
+         if(!latest){throw Error('振り返りが見つかりません')}
+         if(latest.text!==item.text){throw Error('別の画面で更新されています。再表示して確認してください。')}
+         await saveSummary({...latest,text,mode:'manual-edited',editedAt:new Date().toISOString()});
+         await render();
+         if(typeof renderSummaryList==='function'&&typeof activeTab!=='undefined'&&activeTab==='summaries')await renderSummaryList();
+       }catch(e){message.textContent=e.message||'保存に失敗しました。';save.disabled=false;cancel.disabled=false}
+     });
+     textarea.focus();
+   });
+   return article;
  }
  async function renderSummaries(){if(db)await render()}
  async function generatePending(all=false){

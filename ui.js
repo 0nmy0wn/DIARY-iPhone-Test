@@ -9,6 +9,8 @@ if(authToken){localStorage.setItem(TOKEN_KEY,authToken);sessionStorage.removeIte
 function clearAuth(){authToken='';localStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_KEY);updateAuthStatus();}
 let pendingAI=null,aiWorking=false;
 const AUTO_KEY='diary-ai-auto-consent-v1';
+const HOME_SUMMARY_KEY='diary-home-summary-visible-v1';
+let homeSummariesVisible=localStorage.getItem(HOME_SUMMARY_KEY)!=='no';
 let autoEnabled=localStorage.getItem(AUTO_KEY)==='yes';
 let autoRunning=false;
 const autoTried=new Set();
@@ -45,7 +47,7 @@ function legacyCommentEmoji(text){
 let navigationDay=null;
 function shiftDay(day,offset){const [y,m,d]=day.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d+offset));return dt.toISOString().slice(0,10)}
 function todayDiaryDay(){return DiarySummary.dayForEntry(new Date().toISOString())}
-function appendDayHeading(list,day,summaries){const label=dayLabel(day+'T12:00:00+09:00');const heading=document.createElement('h2');heading.className='day-divider';heading.dataset.diaryDay=day;heading.textContent=label;list.append(heading);const summary=summaries.get(day);if(summary)list.append(DiarySummary.makeCard(summary,label));}
+function appendDayHeading(list,day,summaries){const label=dayLabel(day+'T12:00:00+09:00');const heading=document.createElement('h2');heading.className='day-divider';heading.dataset.diaryDay=day;heading.textContent=label;list.append(heading);const summary=summaries.get(day);if(summary&&homeSummariesVisible)list.append(DiarySummary.makeCard(summary,label));}
 function currentVisibleDay(){const headings=[...document.querySelectorAll('#entryList .day-divider[data-diary-day]')];if(!headings.length)return todayDiaryDay();const threshold=115;let chosen=headings[0];for(const h of headings){if(h.getBoundingClientRect().top<=threshold)chosen=h;else break;}return chosen.dataset.diaryDay;}
 async function jumpToDay(offset){if(!db||!editor.classList.contains('hidden'))return;const current=currentVisibleDay();const target=shiftDay(current,offset);if(target>todayDiaryDay()){showToast('これより先の日付には移動できません。');return;}navigationDay=target;const existing=document.querySelector(`#entryList .day-divider[data-diary-day="${target}"]`);if(!existing)await render();const heading=document.querySelector(`#entryList .day-divider[data-diary-day="${target}"]`);if(heading){const top=window.scrollY+heading.getBoundingClientRect().top-108;window.scrollTo({top:Math.max(0,top),behavior:'smooth'});}}
 async function render(){const entries=(await readAll()).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id));const list=el('entryList');const comments=new Map((await readComments()).map(c=>[c.entryId,c]));const summaries=new Map((await DiarySummary.allSummaries()).map(s=>[s.day,s]));list.replaceChildren();list.className='entry-list';const days=new Set(entries.map(e=>DiarySummary.dayForEntry(e.createdAt)));if(navigationDay)days.add(navigationDay);if(!days.size){const section=document.createElement('section');section.className='empty';section.textContent='まだ日記はありません。';list.append(section);return}let lastDay='';const orderedDays=[...days].sort().reverse();for(const dayToShow of orderedDays){const dayEntries=entries.filter(e=>DiarySummary.dayForEntry(e.createdAt)===dayToShow);if(!dayEntries.length){appendDayHeading(list,dayToShow,summaries);const empty=document.createElement('p');empty.className='day-empty';empty.textContent='投稿なし';list.append(empty);continue;}for(const entry of dayEntries){const day=DiarySummary.dayForEntry(entry.createdAt);if(day!==lastDay){appendDayHeading(list,day,summaries);lastDay=day;}const article=document.createElement('article');article.className='entry';const date=document.createElement('p');date.className='entry-date';date.textContent=dateLabel(entry.createdAt);const p=document.createElement('p');p.className='entry-body';p.textContent=entry.body;const actions=document.createElement('div');actions.className='entry-actions';const del=document.createElement('button');del.className='entry-delete';del.textContent='削除';del.setAttribute('aria-label',`${dateLabel(entry.createdAt)}の日記を削除`);del.addEventListener('click',()=>{pendingDelete=entry.id;el('deleteConfirm').classList.remove('hidden')});actions.append(del);article.append(date,p);
@@ -234,6 +236,13 @@ el('aiAutoConsent').addEventListener('change',event=>{
  updateAutoStatus();void render();if(autoEnabled)queueAutoComments();
 });
 updateAutoStatus();
+const homeSummaryToggle=el('showHomeSummaries');
+homeSummaryToggle.checked=homeSummariesVisible;
+homeSummaryToggle.addEventListener('change',()=>{
+ homeSummariesVisible=homeSummaryToggle.checked;
+ localStorage.setItem(HOME_SUMMARY_KEY,homeSummariesVisible?'yes':'no');
+ void render();
+});
 window.addEventListener('online',queueAutoComments);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)queueAutoComments()});
 updateAuthStatus();

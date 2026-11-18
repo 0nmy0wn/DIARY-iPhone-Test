@@ -76,3 +76,11 @@
 /* v0.4.3.1: summary-only calendar navigation above the bottom tabs. */
 #summaryView .summary-floating-actions{bottom:calc(78px + env(safe-area-inset-bottom))}
 #summaryList .day-divider{scroll-margin-top:108px}
+
+/* v0.4.4: daily summary manual editing */
+.summary-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.summary-card-header h3{margin:0}
+.summary-edit-button{border:1px solid #cfc3b8;background:#fff9f2;border-radius:9px;padding:5px 12px;color:#574a40;font-size:13px;flex-shrink:0}
+.summary-edit-area{box-sizing:border-box;width:100%;min-height:120px;border:1px solid #c7b9aa;border-radius:10px;padding:12px;font:inherit;font-size:16px;line-height:1.65;background:#fff;resize:vertical}
+.summary-edit-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:9px}
+.summary-edit-actions button{font-size:14px;padding:9px 13px}
