@@ -81,6 +81,12 @@
 .summary-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
 .summary-card-header h3{margin:0}
 .summary-edit-button{border:1px solid #cfc3b8;background:#fff9f2;border-radius:9px;padding:5px 12px;color:#574a40;font-size:13px;flex-shrink:0}
-.summary-edit-area{box-sizing:border-box;width:100%;min-height:120px;border:1px solid #c7b9aa;border-radius:10px;padding:12px;font:inherit;font-size:16px;line-height:1.65;background:#fff;resize:vertical}
-.summary-edit-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:9px}
-.summary-edit-actions button{font-size:14px;padding:9px 13px}
+/* v0.4.6 revised: full-screen summary editor */
+body.summary-edit-open{overflow:hidden}
+.summary-full-editor{position:fixed;top:0;left:0;right:0;height:100dvh;z-index:100;display:flex;flex-direction:column;background:#faf8f5;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:hidden}
+.summary-full-editor .summary-edit-actions{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:8px 12px;border-bottom:1px solid #e8e3dc;flex:none}
+.summary-edit-actions strong{font-size:14px;text-align:center;min-width:0}
+.summary-edit-actions button{font-size:14px;padding:10px 12px;min-height:44px;flex-shrink:0}
+.summary-full-editor .summary-edit-area{display:block;flex:1;min-height:0;width:100%;border:0;background:transparent;padding:16px;font:inherit;font-size:16px;line-height:1.85;resize:none;overflow:auto;color:#292723;outline:none}
+.summary-full-editor .notice{flex:none;margin:0;padding:8px 16px}
+

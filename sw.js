@@ -1,5 +1,5 @@
 'use strict';
-const CACHE='diary-app-v0.4.4-20261119';
+const CACHE='diary-app-v0.4.6-20261125-fullscreen';
 const ASSETS=['./','./index.html','./styles.css','./ui.js','./summary.js','./merge.js','./icon.svg','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./manifest.webmanifest'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith('diary-app-')||k.startsWith('diary-v020-windows-trial-'))&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
