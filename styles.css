@@ -106,3 +106,10 @@ body.post-edit-open .top{display:none}
 #editor .editor-inner{display:flex;flex:1;min-height:0;padding:0;overflow:hidden}
 .shared-editor textarea,#editor .editor-inner textarea{display:block;flex:1;min-height:0;width:100%;border:0;background:transparent;padding:16px;font:inherit;font-size:16px;line-height:1.85;resize:none;overflow:auto;color:#292723;outline:none;overscroll-behavior:contain}
 .shared-editor .notice,#editor .notice{flex:none;margin:0;padding:8px 16px}
+
+/* v0.4.6.2: prevent root rubber-band while either editor is open. */
+html.editor-scroll-lock,html.editor-scroll-lock body{overflow:hidden;overscroll-behavior:none;height:100%;}
+body.post-edit-open .shell{min-height:0;height:0;padding-top:0;}
+.shared-editor{overscroll-behavior:none;}
+.shared-editor .shared-editor-bar{touch-action:none;}
+.shared-editor textarea,#editor .editor-inner textarea{overscroll-behavior:none;}
