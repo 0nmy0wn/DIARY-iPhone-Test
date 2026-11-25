@@ -121,8 +121,11 @@ async function switchTab(tab){
 function syncBottomTabs(){bottomTabs.classList.toggle('hidden',!editor.classList.contains('hidden'))}
 el('tabHome').addEventListener('click',()=>void switchTab('home'));
 el('tabSummaries').addEventListener('click',()=>void switchTab('summaries'));
-function openEditor(){home.classList.add('hidden');summaryView.classList.add('hidden');editor.classList.remove('hidden');syncBottomTabs();window.scrollTo(0,0);body.focus()}
-function leaveEditor(){editor.classList.add('hidden');(activeTab==='home'?home:summaryView).classList.remove('hidden');syncBottomTabs();body.value='';el('editorStatus').textContent='';el('submitEntry').disabled=true;window.scrollTo(0,0)}
+function editorDayLabel(day){return new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(new Date(day+'T12:00:00+09:00')).replace('(','（').replace(')','）')}
+function attachEditorViewport(panel){const viewport=window.visualViewport;const resize=()=>{panel.style.height=`${viewport?viewport.height:window.innerHeight}px`;panel.style.top=`${viewport?viewport.offsetTop:0}px`;};resize();window.addEventListener('resize',resize);viewport?.addEventListener('resize',resize);viewport?.addEventListener('scroll',resize);return ()=>{window.removeEventListener('resize',resize);viewport?.removeEventListener('resize',resize);viewport?.removeEventListener('scroll',resize);panel.style.height='';panel.style.top='';};}
+let detachPostViewport=null;
+function openEditor(){home.classList.add('hidden');summaryView.classList.add('hidden');el('editorDay').textContent=editorDayLabel(todayDiaryDay());document.body.classList.add('post-edit-open');editor.classList.remove('hidden');syncBottomTabs();window.scrollTo(0,0);detachPostViewport=attachEditorViewport(editor);body.focus()}
+function leaveEditor(){body.blur();detachPostViewport?.();detachPostViewport=null;document.body.classList.remove('post-edit-open');editor.classList.add('hidden');(activeTab==='home'?home:summaryView).classList.remove('hidden');syncBottomTabs();body.value='';el('editorStatus').textContent='';el('submitEntry').disabled=true;window.scrollTo(0,0)}
 function requestClose(){if(busy)return;if(body.value.trim())confirm.classList.remove('hidden');else leaveEditor()}
 function openMenu(){menu.classList.remove('hidden');el('menuButton').setAttribute('aria-expanded','true')}
 function closeMenu(){if(busy)return;menu.classList.add('hidden');el('menuButton').setAttribute('aria-expanded','false')}

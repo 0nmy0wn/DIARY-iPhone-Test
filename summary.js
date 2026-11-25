@@ -30,19 +30,17 @@
      editing=true;
      const textarea=document.createElement('textarea');textarea.className='summary-edit-area';textarea.value=item.text;
      textarea.maxLength=3000;textarea.setAttribute('aria-label','振り返りの編集内容');
-     const actions=document.createElement('div');actions.className='summary-edit-actions';
+     const actions=document.createElement('div');actions.className='summary-edit-actions shared-editor-bar';
      const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';cancel.className='plain bordered';
      const save=document.createElement('button');save.type='button';save.textContent='保存する';save.className='submit';
      const message=document.createElement('span');message.className='notice';message.setAttribute('role','status');
-     const panel=document.createElement('section');panel.className='summary-full-editor';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','振り返りの編集');
-     const title=document.createElement('strong');title.textContent=dayLabelText||item.day;
+     const panel=document.createElement('section');panel.className='summary-full-editor shared-editor';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','振り返りの編集');
+     const title=document.createElement('div');title.className='shared-editor-title';const heading=document.createElement('strong');heading.textContent='振り返りの編集';const date=document.createElement('span');date.textContent=editorDayLabel(item.day);title.append(heading,date);
      actions.append(cancel,title,save);panel.append(actions,textarea,message);
      const shell=document.querySelector('.shell');const scrollY=window.scrollY;
      document.body.append(panel);shell.inert=true;document.body.classList.add('summary-edit-open');
-     const viewport=window.visualViewport;
-     const resize=()=>{panel.style.height=`${viewport?viewport.height:window.innerHeight}px`;panel.style.top=`${viewport?viewport.offsetTop:0}px`;};
-     resize();window.addEventListener('resize',resize);viewport?.addEventListener('resize',resize);viewport?.addEventListener('scroll',resize);
-     const close=()=>{textarea.blur();window.removeEventListener('resize',resize);viewport?.removeEventListener('resize',resize);viewport?.removeEventListener('scroll',resize);panel.remove();shell.inert=false;document.body.classList.remove('summary-edit-open');editing=false;window.scrollTo(0,scrollY);if(edit.isConnected)edit.focus({preventScroll:true});};
+     const detachViewport=attachEditorViewport(panel);
+     const close=()=>{textarea.blur();detachViewport();panel.remove();shell.inert=false;document.body.classList.remove('summary-edit-open');editing=false;window.scrollTo(0,scrollY);if(edit.isConnected)edit.focus({preventScroll:true});};
      cancel.addEventListener('click',close);
      panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();if(!cancel.disabled)close();}});
      save.addEventListener('click',async()=>{
